@@ -1,0 +1,156 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+
+struct Employee {
+    int id;
+    char name[50];
+    float salary;
+};
+void displayMenu() {
+    printf("\nEmployee Management System\n");
+    printf("1. Add Employee\n");
+    printf("2. View All Employees\n");
+    printf("3. Update Employee\n");
+    printf("4. Delete Employee\n");
+    printf("5. Exit\n");
+}
+
+
+void addEmployee(FILE *file) {
+    struct Employee emp;
+    
+    printf("\nEnter employee ID: ");
+    scanf("%d", &emp.id);
+    printf("Enter employee name: ");
+    scanf("%s", emp.name);
+    printf("Enter employee salary: ");
+    scanf("%f", &emp.salary);
+
+  
+    fseek(file, 0, SEEK_END);
+  
+    fwrite(&emp, sizeof(struct Employee), 1, file);
+
+    printf("Employee added successfully!\n");
+}
+void viewAllEmployees(FILE *file) {
+    struct Employee emp;
+
+ 
+    fseek(file, 0, SEEK_SET);
+
+    printf("\nEmployee Records:\n");
+    printf("ID\tName\tSalary\n");
+
+    
+    while (fread(&emp, sizeof(struct Employee), 1, file) == 1) {
+        printf("%d\t%s\t%.2f\n", emp.id, emp.name, emp.salary);
+    }
+}
+
+void updateEmployee(FILE *file) {
+    int empId;
+    struct Employee emp;
+
+    printf("\nEnter employee ID to update: ");
+    scanf("%d", &empId);
+
+ 
+    fseek(file, 0, SEEK_SET);
+
+    
+    while (fread(&emp, sizeof(struct Employee), 1, file) == 1) {
+        if (emp.id == empId) {
+            printf("Enter new employee name: ");
+            scanf("%s", emp.name);
+            printf("Enter new employee salary: ");
+            scanf("%f", &emp.salary);
+
+            
+            fseek(file, -sizeof(struct Employee), SEEK_CUR);
+            
+            fwrite(&emp, sizeof(struct Employee), 1, file);
+
+            printf("Employee updated successfully!\n");
+            return;
+        }
+    }
+
+    printf("Employee with ID %d not found!\n", empId);
+void deleteEmployee(FILE *file) {
+    int empId;
+    struct Employee emp;
+
+    printf("\nEnter employee ID to delete: ");
+    scanf("%d", &empId);
+
+ 
+    FILE *tempFile = fopen("temp.dat", "wb");
+    if (tempFile == NULL) {
+        printf("Error creating temporary file!\n");
+        return;
+    }
+
+
+    fseek(file, 0, SEEK_SET);
+
+   
+    while (fread(&emp, sizeof(struct Employee), 1, file) == 1) {
+        if (emp.id != empId) {
+            fwrite(&emp, sizeof(struct Employee), 1, tempFile);
+        }
+    }
+
+    
+    fclose(file);
+    fclose(tempFile);
+
+   
+    remove("employees.dat");
+    rename("temp.dat", "employees.dat");
+
+    printf("Employee deleted successfully!\n");
+}
+
+int main() {
+    FILE *file = fopen("employees.dat", "ab+");
+
+    if (file == NULL) {
+        printf("Error opening file!\n");
+        return 1;
+    }
+
+    int choice;
+
+    do {
+        displayMenu();
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                addEmployee(file);
+                break;
+            case 2:
+                viewAllEmployees(file);
+                break;
+            case 3:
+                updateEmployee(file);
+                break;
+            case 4:
+                deleteEmployee(file);
+                break;
+            case 5:
+                printf("Exiting program.\n");
+                break;
+            default:
+                printf("Invalid choice. Please try again.\n");
+        }
+    } while (choice != 5);
+
+    
+    fclose(file);
+
+    return 0;
+}
